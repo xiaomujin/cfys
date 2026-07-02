@@ -132,7 +132,7 @@ CONNECT_TIMEOUT = 5
 
 [regions]
 # 筛选的地区代码列表
-LIST = ["DE", "FR", "HK", "IN", "JP", "KR", "MY", "NL", "RU", "SG", "TW", "US"]
+LIST = ["DE", "FR", "HK", "IN", "JP", "KR", "RU", "SG", "TW", "US"]
 # 是否先把所有优选高速节点加入精选，再按地区数量补充
 PREFER_FAST = true
 # 每个地区最多保留数量
