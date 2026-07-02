@@ -9,7 +9,7 @@ from src.config import load_config
 from src.sources import fetch_all_sources
 from src.tcp import run_tcp_tests, select_candidates
 from src.speed import run_speed_tests
-from src.output import write_results, write_best, select_best, print_summary
+from src.output import write_results, write_best, write_fast_ips, select_best, print_summary
 from push_proxyip import run_push
 from push_dns import run_push as run_push_dns
 from push_github import run_push as run_push_github
@@ -68,7 +68,8 @@ async def run() -> int:
     best_results = select_best(
         speed_results, cfg.regions, cfg.max_per_region, cfg.prefer_fast
     )
-    write_best(cfg.best_output_file, best_results, cfg.push.extra_file)
+    write_best(cfg.best_output_file, best_results)
+    write_fast_ips(cfg.input_file, speed_results)
 
     fast_count = sum(1 for r in speed_results if r.is_fast)
     print_summary(

@@ -52,25 +52,26 @@ def select_best(
     return selected
 
 
-def write_best(path: Path, results: list[SpeedResult], add_file: Path | None = None) -> None:
-    """写入精选结果
-
-    Args:
-        path: 精选结果输出文件路径
-        results: 精选结果列表
-        add_file: 额外地址文件路径，如果提供则同时写入
-    """
+def write_best(path: Path, results: list[SpeedResult]) -> None:
+    """写入精选结果"""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="\n") as f:
         for r in results:
             f.write(_format_line(r))
 
-    # 同时写入额外地址文件
-    if add_file is not None:
-        add_file.parent.mkdir(parents=True, exist_ok=True)
-        with add_file.open("w", encoding="utf-8", newline="\n") as f:
-            for r in results:
-                f.write(_format_line(r))
+
+def write_fast_ips(path: Path, results: list[SpeedResult]) -> None:
+    """将优选高速IP写入文件（去重，仅IP:Port#Region格式）"""
+    seen: set[str] = set()
+    lines: list[str] = []
+    for r in results:
+        if r.is_fast and r.node.raw not in seen:
+            seen.add(r.node.raw)
+            lines.append(r.node.raw)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="\n") as f:
+        for line in lines:
+            f.write(line + "\n")
 
 
 def print_summary(
