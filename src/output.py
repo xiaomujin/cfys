@@ -52,12 +52,25 @@ def select_best(
     return selected
 
 
-def write_best(path: Path, results: list[SpeedResult]) -> None:
-    """写入精选结果"""
+def write_best(path: Path, results: list[SpeedResult], add_file: Path | None = None) -> None:
+    """写入精选结果
+
+    Args:
+        path: 精选结果输出文件路径
+        results: 精选结果列表
+        add_file: 额外地址文件路径，如果提供则同时写入
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="\n") as f:
         for r in results:
             f.write(_format_line(r))
+
+    # 同时写入额外地址文件
+    if add_file is not None:
+        add_file.parent.mkdir(parents=True, exist_ok=True)
+        with add_file.open("w", encoding="utf-8", newline="\n") as f:
+            for r in results:
+                f.write(_format_line(r))
 
 
 def print_summary(

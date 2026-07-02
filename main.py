@@ -68,7 +68,7 @@ async def run() -> int:
     best_results = select_best(
         speed_results, cfg.regions, cfg.max_per_region, cfg.prefer_fast
     )
-    write_best(cfg.best_output_file, best_results)
+    write_best(cfg.best_output_file, best_results, cfg.push.extra_file)
 
     fast_count = sum(1 for r in speed_results if r.is_fast)
     print_summary(
