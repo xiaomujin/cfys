@@ -42,6 +42,19 @@ class DnsConfig:
 
 
 @dataclass(frozen=True)
+class GitHubConfig:
+    enabled: bool
+    repo: str
+    branch: str
+    workdir: Path
+    message: str
+    token: str
+    proxy: str
+    fallback_no_proxy: bool
+    timeout: float
+
+
+@dataclass(frozen=True)
 class AppConfig:
     # 数据源
     additional_sources: list[SourceConfig]
@@ -70,6 +83,7 @@ class AppConfig:
     # 推送
     push: PushConfig
     dns: DnsConfig
+    github: GitHubConfig
 
 
 def load_config(path: str | Path = "config.toml") -> AppConfig:
@@ -135,5 +149,16 @@ def load_config(path: str | Path = "config.toml") -> AppConfig:
             ping_check=g("dns", "PING_CHECK", True),
             ping_timeout=g("dns", "PING_TIMEOUT", 2.0),
             ping_workers=g("dns", "PING_WORKERS", 50),
+        ),
+        github=GitHubConfig(
+            enabled=g("github", "ENABLED", False),
+            repo=g("github", "REPO", ""),
+            branch=g("github", "BRANCH", "main"),
+            workdir=Path(g("github", "WORKDIR", ".github-sync")),
+            message=g("github", "MESSAGE", "Update IP results"),
+            token=g("github", "TOKEN", ""),
+            proxy=g("github", "PROXY", ""),
+            fallback_no_proxy=g("github", "FALLBACK_NO_PROXY", True),
+            timeout=g("github", "TIMEOUT", 180.0),
         ),
     )

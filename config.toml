@@ -93,6 +93,29 @@ PING_TIMEOUT = 2.0
 # ping 并发数
 PING_WORKERS = 50
 
+# ==================== 推送到 GitHub 仓库 ====================
+
+[github]
+# 是否启用 GitHub 推送（true/false）
+ENABLED = true
+# 仓库地址（HTTPS 格式，如 https://github.com/user/repo.git）
+REPO = ""
+# 推送的目标分支
+BRANCH = "main"
+# 本地克隆目录（用于 git 操作）
+WORKDIR = ".github-sync"
+# 提交信息
+MESSAGE = "Update IP results"
+# GitHub Token
+TOKEN = ""
+# 代理地址（留空则不使用代理，支持 http/https/socks5）
+# 示例: PROXY = "http://127.0.0.1:7890" 或 "socks5://127.0.0.1:7890"
+PROXY = ""
+# 代理失败时自动尝试无代理（true/false）
+FALLBACK_NO_PROXY = true
+# git 命令超时时间（秒）
+TIMEOUT = 30.0
+
 # ==================== 数据源拉取 ====================
 
 [fetch]

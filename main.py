@@ -12,6 +12,7 @@ from src.speed import run_speed_tests
 from src.output import write_results, write_best, select_best, print_summary
 from push_proxyip import run_push
 from push_dns import run_push as run_push_dns
+from push_github import run_push as run_push_github
 
 
 async def run() -> int:
@@ -85,6 +86,9 @@ async def run() -> int:
 
     # === 推送到 Cloudflare DNS ===
     run_push_dns(cfg)
+
+    # === 推送到 GitHub ===
+    run_push_github(cfg)
 
     return 0
 
