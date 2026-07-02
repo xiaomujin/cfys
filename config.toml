@@ -1,0 +1,116 @@
+# ==================== 数据源 ====================
+
+[app]
+# 本地节点文件，与远程源合并去重
+INPUT_FILE = "ips.txt"
+
+# 远程数据源列表，每行格式: IP:Port#Region
+[[ADDITIONAL_SOURCES]]
+url = "https://zip.cm.edu.kg/all.txt"
+enabled = true
+# 可追加更多源:
+# [[ADDITIONAL_SOURCES]]
+# url = "https://example.com/nodes.txt"
+# enabled = true
+
+# ==================== TCP 测试 ====================
+
+[tcp]
+# 单次连接超时（秒）
+TIMEOUT = 1.5
+# 并发连接数
+WORKERS = 500
+# 每个地区保留延迟最低的 N 个候选进入速度测试
+TOP_PER_REGION = 10
+
+# ==================== 速度测试 ====================
+
+[speed]
+# curl 下载超时（秒）
+TIMEOUT = 6.0
+# curl 进程额外缓冲时间（秒），防止进程卡死
+PROCESS_BUFFER = 8.0
+# 并发测速数
+WORKERS = 16
+# 速度 >= 此值标记为"优选高速"（Mbps）
+MIN_MBPS = 10.0
+
+# ==================== 输出 ====================
+
+[output]
+# 完整结果输出文件
+FULL_FILE = "full_ips.txt"
+# 精选结果输出文件（按地区筛选）
+BEST_FILE = "best_ips.txt"
+
+# ==================== 推送到 edgetunnel KV ====================
+
+[push]
+# 是否启用推送（true/false）
+ENABLED = true
+# Cloudflare Account ID
+ACCOUNT_ID = ""
+# API Token（需要 KV:Edit 权限）
+API_TOKEN = ""
+# KV 命名空间 ID（Dashboard → 存储和数据库 → Workers KV 中可见）
+KV_NAMESPACE_ID = ""
+# 推送的源文件（best_ips.txt 或 full_ips.txt）
+INPUT_FILE = "best_ips.txt"
+# 是否启用额外地址文件合并（true/false）
+EXTRA_ENABLED = true
+# 额外地址文件路径（内容会合并到推送中）
+EXTRA_FILE = "add.txt"
+
+# ==================== 推送到 Cloudflare DNS A 记录 ====================
+
+[dns]
+# 是否启用 DNS 推送（true/false）
+ENABLED = false
+# Cloudflare Zone ID
+ZONE_ID = ""
+# API Token（需要 DNS:Edit 权限）
+API_TOKEN = ""
+# DNS 记录名称（如 proxy.example.com）
+RECORD_NAME = ""
+# TTL（秒）
+TTL = 120
+# 是否启用代理（橙色云朵）
+PROXIED = false
+# 推送的 A 记录数量上限
+TARGET_COUNT = 3
+# 地区过滤列表
+BLOCKED_REGIONS = []
+# true = 白名单模式（只保留列表中的地区）  false = 黑名单模式（排除列表中的地区）
+REGIONS_WHITELIST = false
+# 最大重试次数
+MAX_RETRIES = 5
+# 重试间隔（秒）
+RETRY_DELAY = 10
+# 是否在 DNS 推送前进行 ping 可达性检查（true/false）
+PING_CHECK = true
+# ping 超时时间（秒）
+PING_TIMEOUT = 2.0
+# ping 并发数
+PING_WORKERS = 50
+
+# ==================== 数据源拉取 ====================
+
+[fetch]
+# 拉取失败时的最大重试次数
+MAX_RETRIES = 3
+# 重试间隔（秒）
+RETRY_DELAY = 3
+# HTTP 响应超时（秒）
+TIMEOUT = 10
+# HTTP 连接超时（秒）
+CONNECT_TIMEOUT = 5
+
+# ==================== 地区筛选 ====================
+
+[regions]
+# 筛选的地区代码列表
+LIST = ["DE", "FR", "HK", "IN", "JP", "KR", "MY", "NL", "RU", "SG", "TW", "US"]
+# 是否先把所有优选高速节点加入精选，再按地区数量补充
+PREFER_FAST = true
+# 每个地区最多保留数量
+MAX_PER_REGION = 5

@@ -1,0 +1,13 @@
+# 额外地址文件
+# 每行一个地址，格式: IP:Port#Region
+# 示例:
+# 1.2.3.4:443#HK
+# 5.6.7.8:443#JP
+youxuan.cf.090227.xyz#090227
+cf.tencentapp.cn#tencentapp
+www.shopify.com#shopify
+store.ubi.com#ubi
+staticdelivery.nexusmods.com#nexusmods
+saas.sin.fan#sin
+cf.cloudflare.182682.xyz#182682
+cdn.091224.xyz#091224
