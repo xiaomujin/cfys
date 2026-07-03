@@ -206,18 +206,20 @@ class GitHubSync:
             self._cleanup_git_locks()
             self._git(["reset", "--hard"], check=False)
             self._git(["clean", "-fd"], check=False)
-        
+
         # 延迟删除（Windows 可能需要等待文件句柄释放）
         for attempt in range(3):
             try:
-                shutil.rmtree(self.config.workdir, ignore_errors=True)
-                if not self.config.workdir.exists():
-                    return
-                time.sleep(1)
-            except OSError:
-                time.sleep(2)
-        
-        # 最终尝试
+                shutil.rmtree(self.config.workdir)
+                return
+            except OSError as e:
+                if attempt < 2:
+                    time.sleep(2)
+                else:
+                    print(f"警告: 清理目录失败 ({e})，尝试强制删除...")
+                    shutil.rmtree(self.config.workdir, ignore_errors=True)
+
+        # 最终检查
         if self.config.workdir.exists():
             print(f"警告: 无法完全清理目录 {self.config.workdir}")
 
@@ -225,20 +227,30 @@ class GitHubSync:
         """初始化空仓库（用于远程仓库为空的情况）"""
         # 创建目录
         self.config.workdir.mkdir(parents=True, exist_ok=True)
-        
+
         # 初始化本地仓库
         self._git(["init"], cwd=self.config.workdir, check=False)
-        
+
         # 设置用户信息
         self._git(["config", "user.name", "IP Update Bot"], cwd=self.config.workdir, check=False)
         self._git(["config", "user.email", "ip-update-bot@users.noreply.github.com"], cwd=self.config.workdir, check=False)
-        
+
         # 创建分支
         self._git(["checkout", "-b", self.config.branch], cwd=self.config.workdir, check=False)
-        
+
         # 添加远程仓库
         self._git(["remote", "add", "origin", self.config.repo], cwd=self.config.workdir, check=False)
-        
+
+        # 创建初始提交（空仓库需要至少一个 commit 才能 push）
+        readme = self.config.workdir / "README.md"
+        readme.write_text("# IP Results\n", encoding="utf-8")
+        self._git(["add", "README.md"], cwd=self.config.workdir, check=False)
+        self._git(
+            ["-c", "user.name=IP Update Bot", "-c", "user.email=ip-update-bot@users.noreply.github.com",
+             "commit", "-m", "Initial commit"],
+            cwd=self.config.workdir, check=False,
+        )
+
         print(f"已初始化空仓库，分支: {self.config.branch}")
 
     def _has_staged_changes(self) -> bool:
@@ -250,7 +262,18 @@ class GitHubSync:
         raise RuntimeError(diff.stderr.strip() or "git diff --cached --quiet failed")
 
     def _push_if_ahead(self) -> bool:
-        ahead = self._git(["rev-list", "--count", f"origin/{self.config.branch}..HEAD"], check=False)
+        # 检查远程分支是否存在
+        remote_ref = f"origin/{self.config.branch}"
+        ref_exists = self._git(["rev-parse", "--verify", remote_ref], check=False)
+        if ref_exists.returncode != 0:
+            # 远程分支不存在（可能是空仓库），尝试直接推送
+            try:
+                self._git(["push", "origin", self.config.branch])
+                return True
+            except RuntimeError:
+                return False
+
+        ahead = self._git(["rev-list", "--count", f"{remote_ref}..HEAD"], check=False)
         try:
             ahead_count = int(ahead.stdout.strip()) if ahead.returncode == 0 and ahead.stdout.strip() else 0
         except ValueError:

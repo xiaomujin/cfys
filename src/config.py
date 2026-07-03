@@ -71,6 +71,7 @@ class AppConfig:
     # 输出
     full_output_file: Path
     best_output_file: Path
+    extra_file: Path
     # 地区筛选
     regions: list[str]
     prefer_fast: bool
@@ -118,6 +119,7 @@ def load_config(path: str | Path = "config.toml") -> AppConfig:
         min_speed_mbps=g("speed", "MIN_MBPS", 10.0),
         full_output_file=Path(g("output", "FULL_FILE", "full_ips.txt")),
         best_output_file=Path(g("output", "BEST_FILE", "best_ips.txt")),
+        extra_file=Path(g("output", "EXTRA_FILE", "add.txt")),
         regions=[r.upper() for r in g("regions", "LIST", ["HK", "JP", "KR", "US", "TW"])],
         prefer_fast=g("regions", "PREFER_FAST", True),
         max_per_region=g("regions", "MAX_PER_REGION", 5),

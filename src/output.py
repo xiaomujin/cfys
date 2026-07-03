@@ -52,12 +52,20 @@ def select_best(
     return selected
 
 
-def write_best(path: Path, results: list[SpeedResult]) -> None:
-    """写入精选结果"""
+def write_best(path: Path, results: list[SpeedResult], extra_file: Path | None = None) -> None:
+    """写入精选结果，可选追加额外地址文件内容"""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="\n") as f:
         for r in results:
             f.write(_format_line(r))
+        # 追加额外地址文件内容
+        if extra_file and extra_file.exists():
+            f.write("\n")
+            with extra_file.open("r", encoding="utf-8") as ef:
+                for line in ef:
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        f.write(line + "\n")
 
 
 def write_fast_ips(path: Path, results: list[SpeedResult]) -> None:

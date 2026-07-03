@@ -42,6 +42,8 @@ MIN_MBPS = 10.0
 FULL_FILE = "full_ips.txt"
 # 精选结果输出文件（按地区筛选）
 BEST_FILE = "best_ips.txt"
+# 额外地址文件（内容会追加到 best_ips.txt 末尾）
+EXTRA_FILE = "add.txt"
 
 # ==================== 推送到 edgetunnel KV ====================
 
