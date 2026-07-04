@@ -69,17 +69,28 @@ def write_best(path: Path, results: list[SpeedResult], extra_file: Path | None =
 
 
 def write_fast_ips(path: Path, results: list[SpeedResult]) -> None:
-    """将优选高速IP写入文件（去重，仅IP:Port#Region格式）"""
-    seen: set[str] = set()
-    lines: list[str] = []
+    """将优选高速IP追加写入文件（累计模式，不清空原有内容，自动去重）"""
+    # 读取已有的地址用于去重
+    existing: set[str] = set()
+    if path.exists():
+        with path.open("r", encoding="utf-8-sig") as f:
+            for line in f:
+                text = line.strip()
+                if text and not text.startswith("#"):
+                    existing.add(text)
+
+    # 收集新的高速IP
+    new_lines: list[str] = []
     for r in results:
-        if r.is_fast and r.node.raw not in seen:
-            seen.add(r.node.raw)
-            lines.append(r.node.raw)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as f:
-        for line in lines:
-            f.write(line + "\n")
+        if r.is_fast and r.node.raw not in existing and r.node.raw not in new_lines:
+            new_lines.append(r.node.raw)
+
+    # 追加写入（不清空原有内容）
+    if new_lines:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8", newline="\n") as f:
+            for line in new_lines:
+                f.write(line + "\n")
 
 
 def print_summary(
