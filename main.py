@@ -8,6 +8,7 @@ import asyncio
 from src.config import load_config
 from src.sources import fetch_all_sources
 from src.tcp import run_tcp_tests, select_candidates
+from src.region import discover_regions
 from src.speed import run_speed_tests
 from src.output import write_results, write_best, write_fast_ips, select_best, print_summary
 from push_proxyip import run_push
@@ -46,6 +47,9 @@ async def run() -> int:
         return 1
     tcp_results.sort(key=lambda r: r.latency_ms)
     print(f"TCP 可达: {len(tcp_results)} 个节点")
+
+    # === 阶段 2.5: 地区发现（CIDR 生成的 IP 无地区信息） ===
+    tcp_results = await discover_regions(tcp_results)
 
     # 候选筛选
     candidates = select_candidates(tcp_results, cfg.top_per_region)
