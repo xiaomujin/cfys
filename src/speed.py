@@ -11,7 +11,7 @@ from .models import Node, SpeedResult, TcpResult
 
 SPEED_DOMAIN = "speed.cloudflare.com"
 SPEED_PATH = "/__down"
-SPEED_BYTES = 5 * 1024 * 1024  # 5MB
+SPEED_BYTES = 20 * 1024 * 1024  # 20MB
 
 
 def _get_curl() -> str | None:
@@ -30,7 +30,7 @@ def _measure_speed(node: Node, timeout: float, process_buffer: float) -> float:
     cmd = [
         curl,
         "-s", "-o", "NUL" if sys.platform == "win32" else "/dev/null",
-        "-w", "%{size_download} %{time_total}",
+        "-w", "%{http_code} %{speed_download} %{time_connect} %{time_starttransfer}",
         "--resolve", f"{SPEED_DOMAIN}:{node.port}:{node.ip}",
         "--connect-timeout", str(min(5.0, timeout)),
         "--max-time", str(timeout),
@@ -45,14 +45,14 @@ def _measure_speed(node: Node, timeout: float, process_buffer: float) -> float:
             timeout=timeout + process_buffer,
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
         )
-        if result.returncode != 0 or not result.stdout.strip():
+        if not result.stdout.strip():
             return 0.0
         parts = result.stdout.strip().split()
         if len(parts) >= 2:
-            size_bytes = float(parts[0])
-            time_total = float(parts[1])
-            if time_total > 0 and size_bytes > 0:
-                return round((size_bytes * 8) / (time_total * 1_000_000), 2)
+            http_code = int(parts[0])
+            speed_download = float(parts[1])  # bytes/sec
+            if http_code == 200 and speed_download > 0:
+                return round((speed_download * 8) / 1_000_000, 2)
     except (OSError, subprocess.TimeoutExpired, ValueError):
         pass
     return 0.0
