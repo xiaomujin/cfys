@@ -16,6 +16,7 @@ import requests
 from src.config import load_config
 
 DNS_OUTPUT_FILE = Path("dns_ips.txt")
+SPEED_WEIGHT = 0.7  # 带宽权重，延迟权重 = 1 - SPEED_WEIGHT
 
 
 def parse_result_file(filepath: Path) -> list[dict]:
@@ -86,7 +87,7 @@ def filter_and_select(
       1. 仅保留 port=443
       2. 地区过滤：whitelist=true 时只保留列表中的地区，false 时排除列表中的地区
       3. ping 可达性检查（可选）
-      4. 按速度降序排序
+      4. 归一化综合评分排序（带宽权重 speed_weight，延迟权重 1-speed_weight）
       5. 取前 target_count 个
     """
     filtered = []
@@ -138,15 +139,38 @@ def filter_and_select(
     filter_str = " + ".join(parts) if parts else "无过滤"
     print(f"从 {len(entries)} 条记录中筛选出 {len(filtered)} 条（{filter_str}）")
 
-    # 按速度降序
-    filtered.sort(key=lambda e: e["speed_mbps"], reverse=True)
+    # 归一化综合评分：Score = α × S_speed + (1-α) × S_latency
+    if filtered:
+        speeds = [e["speed_mbps"] for e in filtered]
+        latencies = [e["latency_ms"] for e in filtered if e["latency_ms"] < float("inf")]
+        speed_min, speed_max = min(speeds), max(speeds)
+        latency_min = min(latencies) if latencies else 1.0
+
+        for e in filtered:
+            # 带宽得分：(V - Vmin) / (Vmax - Vmin) × 100，越高越好
+            if speed_max > speed_min:
+                s_speed = (e["speed_mbps"] - speed_min) / (speed_max - speed_min) * 100
+            else:
+                s_speed = 50.0  # 所有带宽相同时给中间分
+
+            # 延迟得分：Lmin / L × 100，越低越好（倒数法）
+            if 0 < e["latency_ms"] < float("inf"):
+                s_latency = latency_min / e["latency_ms"] * 100
+            else:
+                s_latency = 0.0  # 延迟缺失或为 0 时给最低分
+
+            e["_score"] = SPEED_WEIGHT * s_speed + (1 - SPEED_WEIGHT) * s_latency
+
+        filtered.sort(key=lambda e: e["_score"], reverse=True)
+
     selected = filtered[:target_count]
 
     if selected:
-        print(f"选取前 {len(selected)} 个节点用于 DNS 更新:")
+        latency_weight = 1 - SPEED_WEIGHT
+        print(f"选取前 {len(selected)} 个节点（带宽权重={SPEED_WEIGHT:.0%}, 延迟权重={latency_weight:.0%}）:")
         for i, e in enumerate(selected, 1):
             print(f"  {i}. {e['ip']}:{e['port']}#{e['region']}  "
-                  f"{e['speed_mbps']:.1f}Mbps  {e['latency_ms']:.1f}ms")
+                  f"{e['speed_mbps']:.1f}Mbps  {e['latency_ms']:.1f}ms  评分:{e['_score']:.1f}")
 
     return selected
 
