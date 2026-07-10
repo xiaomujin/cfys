@@ -85,7 +85,8 @@ async def discover_regions(
     workers: int = 200,
 ) -> list[TcpResult]:
     """为无地区的节点通过 CF-RAY 发现实际区域"""
-    unknown = [r for r in tcp_results if not r.node.region]
+    # unknown: (原始索引, TcpResult)
+    unknown = [(i, r) for i, r in enumerate(tcp_results) if not r.node.region]
     if not unknown:
         return tcp_results
 
@@ -96,9 +97,10 @@ async def discover_regions(
         print(f"  加载地区数据失败: {e}")
         return tcp_results
 
-    queue: asyncio.Queue[TcpResult | None] = asyncio.Queue()
-    updated: dict[int, TcpResult] = {}  # id → new TcpResult
-    no_header_ids: set[int] = set()  # 无 CF-RAY 的节点 id，需剔除
+    # queue 传递 (原始索引, TcpResult)
+    queue: asyncio.Queue[tuple[int, TcpResult] | None] = asyncio.Queue()
+    updated: dict[int, TcpResult] = {}  # 原始索引 → new TcpResult
+    no_header_indices: set[int] = set()  # 无 CF-RAY 的节点原始索引，需剔除
     progress = tqdm(total=len(unknown), desc="地区发现", unit="ip")
 
     stats = {"ok": 0, "connect_fail": 0, "no_header": 0, "iata_not_found": 0}
@@ -109,32 +111,33 @@ async def discover_regions(
             try:
                 if item is None:
                     return
-                iata, status = await _probe_cf_ray(item.node.ip, timeout)
+                idx, tcp_result = item
+                iata, status = await _probe_cf_ray(tcp_result.node.ip, timeout)
                 if status == "ok" and iata in locations:
                     new_node = Node(
-                        ip=item.node.ip, port=item.node.port, region=locations[iata]
+                        ip=tcp_result.node.ip, port=tcp_result.node.port, region=locations[iata]
                     )
-                    updated[id(item)] = TcpResult(
-                        node=new_node, latency_ms=item.latency_ms
+                    updated[idx] = TcpResult(
+                        node=new_node, latency_ms=tcp_result.latency_ms
                     )
                     stats["ok"] += 1
-                    progress.set_postfix_str(f"{item.node.ip} → {locations[iata]}")
+                    progress.set_postfix_str(f"{tcp_result.node.ip} → {locations[iata]}")
                 elif status == "ok":
                     # 有 IATA 但不在 locations 中
                     stats["iata_not_found"] += 1
-                    tqdm.write(f"[地区发现] {item.node.ip} → IATA={iata} 未在 locations 中找到")
+                    tqdm.write(f"[地区发现] {tcp_result.node.ip} → IATA={iata} 未在 locations 中找到")
                 else:
                     stats[status] += 1
                     if status == "no_header":
-                        no_header_ids.add(id(item))
+                        no_header_indices.add(idx)
                 progress.update(1)
             finally:
                 queue.task_done()
 
     num_workers = max(1, min(workers, len(unknown)))
     tasks = [asyncio.create_task(worker()) for _ in range(num_workers)]
-    for r in unknown:
-        queue.put_nowait(r)
+    for item in unknown:
+        queue.put_nowait(item)
     for _ in tasks:
         queue.put_nowait(None)
 
@@ -144,10 +147,10 @@ async def discover_regions(
 
     # 合并结果：替换有地区的节点，剔除无 CF-RAY 的节点
     result = []
-    for r in tcp_results:
-        if id(r) in no_header_ids:
+    for i, r in enumerate(tcp_results):
+        if i in no_header_indices:
             continue
-        result.append(updated.get(id(r), r))
+        result.append(updated.get(i, r))
 
     found = stats["ok"]
     print(f"  识别成功: {found}/{len(unknown)}, 剔除无CF-RAY: {stats['no_header']}")

@@ -17,7 +17,7 @@
 ## 安装
 
 ```bash
-pip install requests tqdm
+pip install -r requirements.txt
 ```
 
 - Python 3.11+（依赖 `tomllib`）
@@ -148,6 +148,7 @@ enabled = true
 ├── push_dns.py          # 推送到 Cloudflare DNS
 ├── push_github.py       # 推送到 GitHub
 ├── config.toml          # 配置文件
+├── requirements.txt     # Python 依赖
 ├── src/
 │   ├── config.py        # 配置加载（TOML → dataclass）
 │   ├── models.py        # 数据结构（Node, TcpResult, SpeedResult）

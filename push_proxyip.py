@@ -3,7 +3,6 @@
 原样读取结果文件，通过 CF KV API 更新。
 """
 
-import sys
 from pathlib import Path
 
 import requests
@@ -12,10 +11,13 @@ from src.config import load_config
 
 
 def read_file(filepath: Path) -> str:
-    """原样读取文件内容（跳过空行和注释）"""
+    """原样读取文件内容（跳过空行和注释）
+
+    Raises:
+        FileNotFoundError: 文件不存在时抛出
+    """
     if not filepath.exists():
-        print(f"错误：未找到文件 {filepath}")
-        sys.exit(1)
+        raise FileNotFoundError(f"未找到文件 {filepath}")
 
     lines = []
     with filepath.open("r", encoding="utf-8") as f:
@@ -59,7 +61,7 @@ def push_to_kv(account_id: str, api_token: str, namespace_id: str, content: str)
     return False
 
 
-def run_push(cfg=None) -> int:
+def run(cfg=None) -> int:
     """供 main.py 调用的入口"""
     if cfg is None:
         cfg = load_config()
@@ -73,7 +75,11 @@ def run_push(cfg=None) -> int:
         print("错误：请在 config.toml [push] 中填写 account_id、api_token、kv_namespace_id")
         return 1
 
-    content = read_file(push.input_file)
+    try:
+        content = read_file(push.input_file)
+    except FileNotFoundError as e:
+        print(f"错误：{e}")
+        return 1
     if not content:
         print("文件为空，跳过推送")
         return 0
@@ -98,7 +104,7 @@ def run_push(cfg=None) -> int:
 
 
 def main() -> int:
-    return run_push()
+    return run()
 
 
 if __name__ == "__main__":

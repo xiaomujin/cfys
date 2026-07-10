@@ -236,7 +236,7 @@ def push_to_dns(
     return False
 
 
-def run_push(cfg=None) -> int:
+def run(cfg=None) -> int:
     """供 main.py 调用的入口
 
     流程: full_ips.txt → 筛选 → dns_ips.txt → CF DNS
@@ -292,7 +292,7 @@ def run_push(cfg=None) -> int:
 
 
 def main() -> int:
-    return run_push()
+    return run()
 
 
 if __name__ == "__main__":

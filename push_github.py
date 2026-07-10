@@ -329,7 +329,7 @@ class GitHubSync:
         return f"AUTHORIZATION: basic {value}"
 
 
-def run_push(cfg=None) -> int:
+def run(cfg=None) -> int:
     """供 main.py 调用的入口
 
     推送 best_ips.txt 和 dns_ips.txt 到 GitHub 仓库
@@ -372,7 +372,7 @@ def run_push(cfg=None) -> int:
 
 
 def main() -> int:
-    return run_push()
+    return run()
 
 
 if __name__ == "__main__":

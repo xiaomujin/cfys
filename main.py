@@ -11,9 +11,9 @@ from src.tcp import run_tcp_tests, select_candidates
 from src.region import discover_regions
 from src.speed import run_speed_tests
 from src.output import write_results, write_best, write_fast_ips, select_best, print_summary
-from push_proxyip import run_push
-from push_dns import run_push as run_push_dns
-from push_github import run_push as run_push_github
+from push_proxyip import run as push_kv
+from push_dns import run as push_dns_records
+from push_github import run as push_github
 
 
 async def run() -> int:
@@ -87,13 +87,13 @@ async def run() -> int:
     )
 
     # === 推送到 edgetunnel KV ===
-    run_push(cfg)
+    push_kv(cfg)
 
     # === 推送到 Cloudflare DNS ===
-    run_push_dns(cfg)
+    push_dns_records(cfg)
 
     # === 推送到 GitHub ===
-    run_push_github(cfg)
+    push_github(cfg)
 
     return 0
 
